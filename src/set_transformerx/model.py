@@ -5,7 +5,7 @@ import equinox as eqx
 import jax
 import jax.numpy as jnp
 from jax import random as jr
-from types import Callable
+from typing import Callable
 
 class MAB(eqx.Module):
     fc_q: eqx.nn.Linear 
