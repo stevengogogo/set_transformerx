@@ -1,5 +1,6 @@
 
-from set_transformerx.model import MAB, SAB, ISAB
+from set_transformerx.modules import MAB, SAB, ISAB
+from set_transformerx.models import SetTransformer
 import jax.numpy as jnp
 
 def test_mab():
@@ -22,3 +23,14 @@ def test_mab():
 
     assert O.shape == (n, dim_V)
     assert O1.shape == O2.shape
+
+def test_tf():
+    n = 10
+    dim_input = 11
+    dim_output = 12
+    X = jnp.ones((n, dim_input))
+
+    tf = SetTransformer(dim_input=dim_input, num_outputs=4, dim_output=dim_output, num_inds=2, dim_hidden=12, num_heads=2, ln=True)
+    O = tf(X)
+
+    assert O.shape == (n, dim_output)

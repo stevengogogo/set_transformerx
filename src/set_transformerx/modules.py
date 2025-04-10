@@ -37,7 +37,7 @@ class MAB(eqx.Module):
 
         self.fc_o = eqx.nn.Linear(dim_V, dim_V, key=k[3])
 
-    def __call__(self, Q, K):
+    def __call__(self, Q, K, **kwargs):
         Q = jax.vmap(self.fc_q)(Q)
         K, V = jax.vmap(self.fc_k)(K), jax.vmap(self.fc_qv)(K)
         Q = jnp.expand_dims(Q, axis=0)
@@ -62,9 +62,9 @@ class MAB(eqx.Module):
 
 class SAB(eqx.Module):
     mab: MAB
-    def __init__(self, dim_in, dim_out, num_heads, ln=False):
-        self.mab = MAB(dim_in, dim_in, dim_out, num_heads, ln=ln)
-    def __call__(self, X):
+    def __init__(self, dim_in, dim_out, num_heads, ln=False, key=jr.PRNGKey(0)):
+        self.mab = MAB(dim_in, dim_in, dim_out, num_heads, ln=ln, key=key)
+    def __call__(self, X, **kwargs):
         return self.mab(X,X)
 
 class ISAB(eqx.Module):
@@ -72,10 +72,24 @@ class ISAB(eqx.Module):
     mab0: MAB
     mab1: MAB
     def __init__(self, dim_in, dim_out, num_heads, num_inds, ln=False, key=jr.PRNGKey(0)):
+        ks = jr.split(key, 2)
         init = jax.nn.initializers.glorot_uniform()
         self.I = init(key, (num_inds, dim_out)) 
-        self.mab0 = MAB(dim_out, dim_in, dim_out, num_heads, ln=ln) 
-        self.mab1 = MAB(dim_in, dim_out, dim_out, num_heads, ln=ln)
-    def __call__(self, X):
+        self.mab0 = MAB(dim_out, dim_in, dim_out, num_heads, ln=ln, key=ks[0]) 
+        self.mab1 = MAB(dim_in, dim_out, dim_out, num_heads, ln=ln, key=ks[1])
+    def __call__(self, X, **kwargs):
         H = self.mab0(self.I,X)
         return self.mab1(X,H)
+
+class PMA(eqx.Module):
+    S: jnp.ndarray
+    mab: MAB
+    def __init__(self, dim, num_heads, num_seeds, ln=False, key=jr.PRNGKey(0)):
+        ks = jr.split(key, 2)
+        init = jax.nn.initializers.glorot_uniform()
+        self.S = init(ks[0], (num_seeds, dim))
+        self.mab = MAB(dim, dim, dim, num_heads, ln=ln, key=ks[1])
+
+    def __call__(self, X, **kwargs):
+        H = self.mab(self.S,X)
+        return H
