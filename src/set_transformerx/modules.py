@@ -29,8 +29,8 @@ class MAB(eqx.Module):
         self.fc_qv = eqx.nn.Linear(dim_K, dim_V, key=k[2])
 
         if ln: 
-            self.res1 = eqx.nn.LayerNorm(dim_V)
-            self.res2 = eqx.nn.LayerNorm(dim_V)
+            self.res1 = jax.vmap(eqx.nn.LayerNorm(dim_V))
+            self.res2 = jax.vmap(eqx.nn.LayerNorm(dim_V))
         else:
             self.res1 = lambda x: x
             self.res2 = lambda x: x

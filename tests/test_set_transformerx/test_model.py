@@ -28,9 +28,10 @@ def test_tf():
     n = 10
     dim_input = 11
     dim_output = 12
+    num_outputs = 4 # length of pooling layer
     X = jnp.ones((n, dim_input))
 
-    tf = SetTransformer(dim_input=dim_input, num_outputs=4, dim_output=dim_output, num_inds=2, dim_hidden=12, num_heads=2, ln=True)
+    tf = SetTransformer(dim_input=dim_input, num_outputs=num_outputs, dim_output=dim_output, num_inds=2, dim_hidden=12, num_heads=2, ln=True)
     O = tf(X)
 
-    assert O.shape == (n, dim_output)
+    assert O.shape == (num_outputs, dim_output)
