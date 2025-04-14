@@ -38,6 +38,7 @@ class MAB(eqx.Module):
         if mlp_kwargs is None:
             mlp_kwargs = dict(
                 width_size=None,
+                final_activation=jax.nn.relu,
                 depth=0
             )
         self.fc_o = eqx.nn.MLP(in_size=dim_V, out_size=dim_V, **mlp_kwargs,key=k[3])
@@ -58,13 +59,13 @@ class MAB(eqx.Module):
 
         attn_logits = jax.lax.batch_matmul(Q_, K_.transpose(0,2,1)) / jnp.sqrt(self.dim_V)
         
-        A = jax.nn.softmax(attn_logits )
+        A = jax.nn.softmax(attn_logits)
         
         O = (Q_ + jax.lax.batch_matmul(A, V_)).reshape(-1,self.dim_V)
         
         # Residual connection
-        O_norm = jax.vmap(self.res1)(O)
-        O = O + jax.vmap(self.fc_o)(O_norm)
+        O = jax.vmap(self.res1)(O)
+        O = O + jax.vmap(self.fc_o)(O)
         O = jax.vmap(self.res2)(O)
         return O
 
