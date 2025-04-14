@@ -93,13 +93,11 @@ class ISAB(eqx.Module):
 class PMA(eqx.Module):
     S: jnp.ndarray
     mab: MAB
-    enc: eqx.Module
     def __init__(self, dim, num_heads, num_seeds, ln=False, *, mlp_kwargs:Optional[dict]=None, key=jr.PRNGKey(0), **kwargs):
         ks = jr.split(key, 3)
         init = jax.nn.initializers.glorot_uniform()
         self.S = init(ks[0], (num_seeds, dim))
         self.mab = MAB(dim, dim, dim, num_heads, ln=ln, mlp_kwargs=mlp_kwargs, key=ks[1], **kwargs)
-        self.enc = eqx.nn.MLP(in_size=dim, out_size=dim, **mlp_kwargs, key=ks[2])
 
     def __call__(self, X, **kwargs):
         H = self.mab(self.S,X, **kwargs)
