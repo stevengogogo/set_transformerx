@@ -74,7 +74,7 @@ class SAB(eqx.Module):
     def __init__(self, dim_in, dim_out, num_heads, ln=False, *, mlp_kwargs:Optional[dict]=None, key=jr.PRNGKey(0), **kwargs):
         self.mab = MAB(dim_in, dim_in, dim_out, num_heads, ln=ln, key=key, mlp_kwargs=mlp_kwargs, **kwargs)
     def __call__(self, X, **kwargs):
-        return self.mab(X,X)
+        return self.mab(X,X, **kwargs)
 
 class ISAB(eqx.Module):
     I: jnp.ndarray
@@ -87,8 +87,8 @@ class ISAB(eqx.Module):
         self.mab0 = MAB(dim_out, dim_in, dim_out, num_heads, ln=ln, key=ks[0], mlp_kwargs=mlp_kwargs, **kwargs) 
         self.mab1 = MAB(dim_in, dim_out, dim_out, num_heads, ln=ln, key=ks[1], mlp_kwargs=mlp_kwargs, **kwargs)
     def __call__(self, X, **kwargs):
-        H = self.mab0(self.I,X)
-        return self.mab1(X,H)
+        H = self.mab0(self.I,X, **kwargs)
+        return self.mab1(X,H, **kwargs)
 
 class PMA(eqx.Module):
     S: jnp.ndarray
@@ -102,5 +102,5 @@ class PMA(eqx.Module):
         self.enc = eqx.nn.MLP(in_size=dim, out_size=dim, **mlp_kwargs, key=ks[2])
 
     def __call__(self, X, **kwargs):
-        H = self.mab(self.S,X)
+        H = self.mab(self.S,X, **kwargs)
         return H
