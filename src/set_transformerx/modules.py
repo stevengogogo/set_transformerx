@@ -37,11 +37,9 @@ class MAB(eqx.Module):
 
         if mlp_kwargs is None:
             mlp_kwargs = dict(
-                activation=jax.nn.gelu, 
                 width_size=None,
                 depth=0
             )
-
         self.fc_o = eqx.nn.MLP(in_size=dim_V, out_size=dim_V, **mlp_kwargs,key=k[3])
 
     def __call__(self, Q, K, **kwargs):
@@ -64,7 +62,7 @@ class MAB(eqx.Module):
         
         # Residual connection
         O = self.res1(O)
-        O = O + jax.nn.gelu(jax.vmap(self.fc_o)(O))
+        O = O + jax.vmap(self.fc_o)(O)
         O = self.res2(O)
         return O
 
@@ -92,12 +90,15 @@ class ISAB(eqx.Module):
 class PMA(eqx.Module):
     S: jnp.ndarray
     mab: MAB
+    enc: eqx.Module
     def __init__(self, dim, num_heads, num_seeds, ln=False, *, mlp_kwargs:Optional[dict]=None, key=jr.PRNGKey(0), **kwargs):
-        ks = jr.split(key, 2)
+        ks = jr.split(key, 3)
         init = jax.nn.initializers.glorot_uniform()
         self.S = init(ks[0], (num_seeds, dim))
         self.mab = MAB(dim, dim, dim, num_heads, ln=ln, mlp_kwargs=mlp_kwargs, key=ks[1], **kwargs)
+        self.enc = eqx.nn.MLP(in_size=dim, out_size=dim, **mlp_kwargs, key=ks[2])
 
     def __call__(self, X, **kwargs):
+        X = jax.vmap(self.enc)(X)
         H = self.mab(self.S,X)
         return H
