@@ -98,15 +98,9 @@ class PMA(eqx.Module):
         ks = jr.split(key, 3)
         init = jax.nn.initializers.glorot_uniform()
         self.S = init(ks[0], (num_seeds, dim))
-        if mlp_kwargs is None:
-            mlp_kwargs = dict(
-                width_size=None,
-                depth=0
-            )
         self.mab = MAB(dim, dim, dim, num_heads, ln=ln, mlp_kwargs=mlp_kwargs, key=ks[1], **kwargs)
         self.enc = eqx.nn.MLP(in_size=dim, out_size=dim, **mlp_kwargs, key=ks[2])
 
     def __call__(self, X, **kwargs):
-        X = jax.vmap(self.enc)(X)
         H = self.mab(self.S,X)
         return H
